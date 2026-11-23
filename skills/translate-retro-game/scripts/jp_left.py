@@ -7,7 +7,8 @@
 --tbl FILE   custom encodings (most SNES): Thingy table "XX=char" / "XXYY=char"; entries whose char is kana/kanji
              count as Japanese. Longest match wins, so multi-byte entries work.
 --rows       (with --tbl) row-format table: "0A0=りるれろ..." maps consecutive codes 0A0, 0A1, ... to its chars.
---le16       (with --tbl) codes are 16-bit little-endian in the data ("0A0=り" matches bytes A0 00), at even offsets.
+--le16       (with --tbl) codes are 16-bit little-endian in the data ("0A0=り" matches bytes A0 00). Both word
+             phases are scanned: scripts with odd-sized opcode arguments put text at odd offsets.
 --orig ORIG  report only runs whose bytes are unchanged from the original (= text you never touched). Without it,
              every Japanese-looking run is reported, including ones you meant to keep (credits in kanji).
 --range      limit to hex offset ranges (text banks); graphics and code produce false runs, so narrow it once
@@ -134,9 +135,12 @@ def load_tbl(path, rows=False, le16=False):
     return entries, max((len(k) for k in entries), default=1)
 
 
-def tbl_char(entries, longest, even=False):
+def tbl_char(entries, longest, even=False, phase=0):
+    """even: 16-bit codes, read only at offsets of the given phase (0 even, 1 odd). --le16 scans both phases:
+    a script whose opcodes take odd-sized arguments flips its text to odd offsets, and an even-only scan read
+    one game's live level-up talk out of step as garbage ("力道さ" for 魔力が), so it was filed as noise."""
     def f(b, i):
-        if even and i & 1:  # shortcut: 16-bit text at odd offsets is missed; add an --odd pass if a game needs it
+        if even and (i & 1) != phase:
             return 0
         for n in range(longest, 0, -1):
             k = bytes(b[i:i + n])
@@ -230,7 +234,13 @@ def main(argv=None):
     found, skipped = [], 0
     for lo, hi in ranges:
         hi = min(hi + 1, len(b))
-        runs = scan_dbcs(b, char_at, reach, lo, hi, a.min) if a.dbcs and reach else scan(b, char_at, lo, hi, a.min)
+        if a.dbcs and reach:
+            runs = scan_dbcs(b, char_at, reach, lo, hi, a.min)
+        elif a.tbl and a.le16:     # both word phases (tbl_char)
+            runs = sorted(set(scan(b, char_at, lo, hi, a.min))
+                          | set(scan(b, tbl_char(entries, longest, True, 1), lo, hi, a.min)))
+        else:
+            runs = scan(b, char_at, lo, hi, a.min)
         for s, e in runs:
             if orig is not None and orig[s:e] != b[s:e]:
                 continue
@@ -285,6 +295,7 @@ def _selftest():
         assert f2(b"\xf0\xec", 0) == -2 and f2(b"\xec", 0) == 1  # longer non-JP code wins over JP prefix
         assert scan(b"\xf0\xec" * 4, f2, 0, 8, 2) == []  # no false run starting mid-code on EC
         assert scan(data, f, 0, len(data), 4) == [] and scan(b"\x00\x00" + data[1:], f, 0, 10, 4) == [(2, 10)]
+        assert scan(data, tbl_char(e, n, even=True, phase=1), 0, len(data), 4) == [(1, 9)]  # odd-phase text
         open(os.path.join(d, "s.txt"), "w").write("0x0  # real\n8 12\n")
         assert load_slots(os.path.join(d, "s.txt"), rom) == [(0x10, 0), (0x12, 8)]
     print("selftest ok")

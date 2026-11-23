@@ -71,7 +71,11 @@ A tour only proves the screens it visits. Coverage lists the text it never reach
 3. **Report:** `python -X utf8 $SKILL/scripts/textcover.py work/qa/cover build/strings.tsv --waive docs/text_unshown.tsv --mask 0x7FFFFF` (the mask folds SNES mirrors). Exit 1 while any string isn't shown or waived. `--runs-for ID,ID` instead lists the run directories that showed those ids (re-run only those after a fix).
 4. **Close the gaps:** add a scene for each group of missing ids, and re-run. Waive only what you can show is unreachable, with the reason (`id<TAB>debug-only string`).
 
-A first-byte read proves the game reached a string, not that it drew correctly; the sheets still judge that. PPSSPP has no Lua, so a PSP project needs another log source or a waiver for the gate.
+A first-byte read proves the game reached a string, not that it drew correctly; the sheets still judge that.
+
+**Coverage only lists what `strings.tsv` lists.** Text the extractor marked data, text drawn as graphics, and screens shown only after an event are missing from it, so coverage can't report them as unshown. Two more gates close that gap:
+- **Flow checklist.** Warps jump straight into scenes, so the screens the game shows *between* them never get visited. Give the scene list one scene per routine event the game has, played out to the end rather than warped past: battle or map won and lost, level up (every stat line, a spell or skill learnt), item obtained, results or score screen, game over, save and load, shop and inn, chapter cards, ending and credits. Where a real event is out of reach, force it: write the event's RAM values (stat deltas, flags) from the hook and call the event script, so every branch draws. One game passed a 147-scene tour with its level-up talk and its results title still Japanese: no scene ever finished a map.
+- **Graphics on every flow screen.** On each checklist screen, compare the shot with the original's: Japanese that isn't text (titles, labels in tiles) shows only there. Trace each one with `vramfind.py` and add it to the graphics list. PPSSPP has no Lua, so a PSP project needs another log source or a waiver for the gate.
 
 ## emu.py
 
