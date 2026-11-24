@@ -113,6 +113,18 @@ def mesen_state(exe, state, out):
     return fixed
 
 
+def remove_runtime(runtime):
+    """Delete a run's private Mesen (<out>/_mesen). NTFS caps a file at 1024 hard links, so keeping one per run
+    made every run past ~1023 a full binary copy (300+ GB over a project's QA). Retried: a just-killed exe stays
+    locked for a moment on Windows."""
+    for _ in range(10):
+        shutil.rmtree(runtime, ignore_errors=True)
+        if not os.path.exists(runtime):
+            return
+        time.sleep(0.5)
+    print(f"warning: could not delete {runtime}", file=sys.stderr)
+
+
 def mesen_run(exe, out):
     """Private portable config: Mesen's CLI cannot override string-valued save paths."""
     source = os.path.dirname(os.path.abspath(exe))
@@ -123,6 +135,7 @@ def mesen_run(exe, out):
     files = [exe] + [p for p in glob.glob(os.path.join(source, "*"))
                      if os.path.isfile(p) and p.lower().endswith((".dll", ".so", ".dylib"))]
     files += glob.glob(os.path.join(source, "Firmware", "*"))
+    copied = 0
     for src in files:
         if not os.path.isfile(src):
             continue
@@ -132,8 +145,12 @@ def mesen_run(exe, out):
             os.remove(dst)
         try:
             os.link(src, dst)
-        except OSError:
+        except OSError:  # other volume, or NTFS's 1024-links-per-file cap: run() deletes the copy when it ends
             shutil.copy2(src, dst)
+            copied += os.path.getsize(dst)
+    if copied:
+        print(f"warning: copied {copied >> 20} MB of Mesen into {runtime} (hard link refused); look for leftover "
+              "_mesen/ folders from killed runs", file=sys.stderr)
     config = os.path.join(source, "settings.json")
     cfg = {}
     if os.path.exists(config):
@@ -376,6 +393,8 @@ def run(a):
     finally:
         if mesen and os.path.exists(sav):
             shutil.copy(sav, os.path.join(out, os.path.basename(sav)))
+        if mesen:  # nothing reads it after the run; kept, each one held a link (or a ~94 MB copy) of Mesen
+            remove_runtime(os.path.dirname(exe))
         if restore:
             time.sleep(0.5)
         for path, old in restore:

@@ -97,6 +97,10 @@ class Gotchas(unittest.TestCase):
             cfg = json.loads(Path(private2).with_name("settings.json").read_text())
             self.assertEqual(cfg["Preferences"]["SaveDataFolder"], saves2)
             self.assertEqual(Path(private).read_bytes(), b"fixture")
+            # Each kept runtime holds a hard link to Mesen.exe; NTFS stops at 1024, then every run is a full copy
+            emu.remove_runtime(os.path.dirname(private2))
+            self.assertFalse(Path(private2).parent.exists())
+            self.assertEqual(exe.read_bytes(), b"fixture")
 
     def test_batches_unique_keys_partial_merge_and_wrapped_terms(self):
         with tempfile.TemporaryDirectory() as d:
