@@ -13,7 +13,7 @@ It is a playbook plus tested tools, distilled from eight finished fan translatio
   |---|---|
   | SNES | MesenCE (or Mesen2) |
   | GBA | MesenCE (BIOS fetched from retrobios) |
-  | NDS | [DeSmuME QA fork](https://github.com/minhnhattonthat/desmume/releases) (headless), or stock DeSmuME + Lua 5.1 |
+  | NDS | [DeSmuME QA fork](https://github.com/mtlgames/desmume/releases) (headless), or stock DeSmuME + Lua 5.1 |
   | PS1 | PCSX-Redux |
   | PSP | PPSSPP (window hidden, WebSocket debugger) |
 
@@ -42,7 +42,7 @@ Claude Code, as a plugin (recommended: ships the guard hook, and every push reac
 ```
 
 For a game repo, commit this to its `.claude/settings.json` instead, so every clone gets the plugin and its updates
-([fan-translation-template](https://github.com/minhnhattonthat/fan-translation-template) has it):
+([fan-translation-template](https://github.com/mtlgames/fan-translation-template) has it):
 
 ```json
 "extraKnownMarketplaces": {

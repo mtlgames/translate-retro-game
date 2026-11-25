@@ -16,14 +16,14 @@ DISTRIB = "https://distrib.app"
 TARGETS = {
     # QA fork: debugger RAM follows what the game touches, not ROM size (upstream: ~52 B per ROM byte under Lua).
     # It ships no macOS build (CI signing needs upstream's secrets): macOS takes upstream's.
-    "mesen": ("minhnhattonthat/MesenCE", {
+    "mesen": ("mtlgames/MesenCE", {
         ("windows", "x64"): r"_Windows\.zip$", ("windows", "arm64"): r"_Windows\.zip$",
         ("linux", "x64"): r"_Linux_x64\.zip$", ("linux", "arm64"): r"_Linux_ARM64\.zip$",
         ("macos", "x64"): ("nesdev-org/MesenCE", r"_macOS_x64_Intel\.zip$"),
         ("macos", "arm64"): ("nesdev-org/MesenCE", r"_macOS_ARM64_AppleSilicon\.zip$")},
-     "github.com/minhnhattonthat/MesenCE/releases (QA fork, `agent-qa`, QA-FORK.md; upstream github.com/nesdev-org/MesenCE)"),
-    "desmume": ("minhnhattonthat/desmume", {("windows", "x64"): r"-win64\.zip$", ("windows", "arm64"): r"-win64\.zip$"},
-                "github.com/minhnhattonthat/desmume/releases (the QA fork is Windows x64 only; elsewhere build `agent-qa`, see QA-FORK.md)"),
+     "github.com/mtlgames/MesenCE/releases (QA fork, `agent-qa`, QA-FORK.md; upstream github.com/nesdev-org/MesenCE)"),
+    "desmume": ("mtlgames/desmume", {("windows", "x64"): r"-win64\.zip$", ("windows", "arm64"): r"-win64\.zip$"},
+                "github.com/mtlgames/desmume/releases (the QA fork is Windows x64 only; elsewhere build `agent-qa`, see QA-FORK.md)"),
     "pcsx": (None, {("windows", "x64"): "dev-win-x64", ("windows", "arm64"): "dev-win-x64", ("linux", "x64"): "dev-linux-x64"},
              "github.com/grumpycoders/pcsx-redux (no macOS or ARM build is published)"),
     "ppsspp": ("hrydgard/ppsspp", {
@@ -32,8 +32,8 @@ TARGETS = {
         ("macos", "x64"): r"PPSSPPSDL-macOS-.*\.zip$", ("macos", "arm64"): r"PPSSPPSDL-macOS-.*\.zip$"},
      "ppsspp.org/downloads.html"),
     # what psp.py drives (no window, states by path, stepping by emulated time); one install per machine, see psp.SHARED
-    "ppsspp-headless": ("minhnhattonthat/ppsspp", {("windows", "x64"): r"-win64\.zip$", ("windows", "arm64"): r"-win64\.zip$"},
-                        "github.com/minhnhattonthat/ppsspp/releases (the QA fork is Windows x64 only; elsewhere build `agent-qa`, see QA-FORK.md)"),
+    "ppsspp-headless": ("mtlgames/ppsspp", {("windows", "x64"): r"-win64\.zip$", ("windows", "arm64"): r"-win64\.zip$"},
+                        "github.com/mtlgames/ppsspp/releases (the QA fork is Windows x64 only; elsewhere build `agent-qa`, see QA-FORK.md)"),
 }
 
 
