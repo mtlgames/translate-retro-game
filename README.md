@@ -29,7 +29,7 @@ It is a playbook plus tested tools, distilled from eight finished fan translatio
 Any agent, with the [skills CLI](https://github.com/vercel-labs/skills):
 
 ```
-npx skills add minhnhattonthat/translate-retro-game
+npx skills add mtlgames/translate-retro-game
 ```
 
 It asks which agents to install for; add `-g` to install globally instead of into the current project, or `-a <agent>` to pick one.
@@ -37,7 +37,7 @@ It asks which agents to install for; add `-g` to install globally instead of int
 Claude Code, as a plugin (recommended: ships the guard hook, and every push reaches you with auto-update on):
 
 ```
-/plugin marketplace add minhnhattonthat/translate-retro-game
+/plugin marketplace add mtlgames/translate-retro-game
 /plugin install translate-retro-game@retro-translation
 ```
 
@@ -47,7 +47,7 @@ For a game repo, commit this to its `.claude/settings.json` instead, so every cl
 ```json
 "extraKnownMarketplaces": {
   "retro-translation": {
-    "source": { "source": "github", "repo": "minhnhattonthat/translate-retro-game" },
+    "source": { "source": "github", "repo": "mtlgames/translate-retro-game" },
     "autoUpdate": true
   }
 },
