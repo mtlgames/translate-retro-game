@@ -7,6 +7,7 @@ Failures from other translation projects, found by what you see rather than by c
 | Symptom | What it turned out to be | Check |
 |---|---|---|
 | Code or data put in "unused" space crashes on boot, or only on entering one area | Zero-filled space was live: overwritten conversion code; a function with no direct calls was called through a pointer | Fill the candidate with a trap byte (0xFF or a BRK/invalid opcode) and tour; no hit on one route doesn't prove the range is free everywhere |
+| English breaks mid-word ("regist / ered") and its last letter sits past the box frame; the JP looks fine | The box wraps by itself every N cells with no word logic; the JP has lines longer than the box and relies on it | `boxes.py`: mark the group `self` and store the English pre-wrapped under the longest line that draws inside; then run it over every group, since one PSP game had two such boxes and fixed only the first |
 | Translating one scene garbles the next one | The next pointer is not a string end: several scenes shared one tail and terminator | Take string ends from the terminator the reader stops at, never from the next pointer |
 | A pointer lands mid-sentence after relocation | Interior pointer into a translation record; its byte distance from the start no longer holds | Split records at every pointer target, or keep the containing structure in place |
 | Moving a string with no pointer changes the neighbouring names | Code reads that string at a fixed address | No pointer found doesn't mean it can move; leave it in place or find the reader |

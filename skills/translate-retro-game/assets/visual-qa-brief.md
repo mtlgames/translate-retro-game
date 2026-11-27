@@ -24,6 +24,8 @@ An `issue` is any of:
 - garbage tiles, wrong or missing glyphs, a strike or stray pixels across letters;
 - broken line breaks: a word split mid-line, a page ending mid-sentence, a one-word last line;
 - an empty box where text belongs;
+- a list whose entries open a detail view (mail, quest, item or card description, log page) with no opened entry
+  on the sheet: the tour never showed that box, so nobody has checked it (`issue`: "detail view not toured");
 - a name that differs from `glossary.md`.
 
 Standing non-bugs, `ok` (the controller adds the game's own below):

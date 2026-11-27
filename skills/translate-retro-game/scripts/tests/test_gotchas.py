@@ -13,6 +13,7 @@ from unittest.mock import patch
 
 SCRIPTS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
+import boxes as boxes_mod
 import emu
 import fetch_emu
 import gim
@@ -139,6 +140,21 @@ class Gotchas(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(b"usage:", result.stderr)
         self.assertNotIn(b"Traceback", result.stderr)
+
+    def test_boxes_flags_unmeasured_self_wrapping_and_overlong(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "shot.png").write_bytes(b"png")
+            text = [["mail:1", "mail", "収集特課へようこそ！\\n" + "あ" * 30, "Welcome!\\nYour data has been successfully registered."],
+                    ["help:1", "help", "あ" * 30, "A short line\\nand another"],
+                    ["name:1", "name", "名前", "Name"]]
+            boxes = [["mail", "stored", "40", "shot.png"], ["help", "self", "35", "shot.png"]]
+            bad = boxes_mod.problems(text, boxes, d)
+            self.assertTrue(any(p.startswith("mail: JP lines run to 60") for p in bad), bad)
+            self.assertTrue(any(p.startswith("mail: 1 English lines over 40") for p in bad), bad)
+            self.assertTrue(any(p.startswith("name: no box row") for p in bad), bad)
+            self.assertFalse(any(p.startswith("help") for p in bad), bad)
+            boxes[1][3] = "missing.png"
+            self.assertTrue(any(p.startswith("help: no shot") for p in boxes_mod.problems(text, boxes, d)))
 
     def test_driver_globals_cannot_be_overwritten(self):
         from types import SimpleNamespace

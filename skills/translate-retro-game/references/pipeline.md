@@ -94,13 +94,20 @@ Unpack → repack with no edits → compare bytes. Make this the first test in t
 
 ### Width gate (before any translator dispatch)
 
-Translators write to the limits you give them; a guessed limit means a re-fit pass over every batch. Measure each box variant in-game with the marker build or a stress build (`--qa ID=text`-style override of single lines), and record px/chars and lines per variant in the project's window data:
+Translators write to the limits you give them; a guessed limit means a re-fit pass over every batch. Measure each box variant in-game with the marker build or a stress build (`--qa ID=text`-style override of single lines), and record px/chars and lines per variant in the project's window data.
+
+**Start from the text, not from the screens you happened to see.** Export every string with the box it lands in (`id, group, jp, en`; a group is a table column, a window type, a menu field) and keep `docs/boxes.tsv`, one row per group: how it wraps, its line budget, and a measured shot. `scripts/boxes.py TEXT.tsv docs/boxes.tsv` fails on any group with no row or no shot, so an unmeasured box can't hide behind a byte rule. In one game the width gate measured dialogue, captions and choices, gave every other table column "3x the JP bytes", and the mail body (a screen opened from the mail list, never toured) shipped with 66 of 82 mails broken mid-word.
+
+**Boxes that wrap by themselves.** Some boxes break every N cells with no word logic: fine for Japanese, mid-word in English ("regist|ered"), and the last cell often draws past the frame. The sign is in the JP itself: lines longer than the box with no stored break. `boxes.py` flags any group whose JP lines run past its budget unless it is marked `self`; store that group's English pre-wrapped under the longest line that draws inside the box. When one such box turns up, run the check over every group before closing the bug: the same engine had a second one.
+
+Variants to cover:
 - portrait box vs no-portrait box;
 - name tag (also try the longest glossary name);
 - narration;
 - choices;
 - the last line, where the page-wait arrow takes space;
-- menus, labels, item and skill names.
+- menus, labels, item and skill names;
+- detail views opened from a list (a mail, a quest, an item or card description, a log entry): each is its own box.
 
 Measure the limit from pixels, not from the engine's cell count: in a zoomed shot, find the last column where a glyph still shows. One game's boxes showed one cell less than the width variable said, so the wrap limit was 4 px too wide. Only lines that landed in that 4-px window got clipped, and they first surfaced in a playtest, across every box type. Test with a line that fills each box to the computed limit exactly.
 
@@ -116,7 +123,7 @@ Never derive a limit from the Japanese length. Limits guessed that way (a 16-cha
 - **Scrolling and paged views** (encyclopedia, help, logs): scroll the longest marker to its last line. The scroll or page limit is often a separate table sized from the Japanese line counts; one article stopped scrolling before its end.
 - Tag each limit in the window data as measured (with the shot) or guess. A LONG line against a guessed limit means measure it, not abbreviate.
 
-**Done when** every variant has a measured budget and the torture line renders correctly.
+**Done when** `boxes.py` exits 0 (every text group has a measured budget and a shot) and the torture line renders correctly.
 
 ## Checks
 
@@ -132,6 +139,7 @@ Wire all of these into the one-command check (Step 0) so the pre-commit hook run
   - non-empty `jp` with empty `en` fails, unless the id is in a committed keep-list (`script/keep_jp.txt`, one id and reason per line). "Intentional blanks" silently shipped 41 Japanese fields in one game;
   - leading and trailing blanks match the JP (see §Extract);
   - **row width counts what the engine adds at run time:** cursor-advance codes at their cell count, and each variable (a name, a number, a called sub-string) at its **longest** English value, from a table of variable widths. A row exactly as wide as the box, followed by an explicit newline, wraps twice: the engine wraps on its own at the edge, and the newline then skips a row. Fail it like an overflow. One ceremony line was 27 cells as typed, but the longest spirit name made it 28, so its next line drew over it.
+- **Box gate:** `scripts/boxes.py` over the exported text and `docs/boxes.tsv` (§Width gate): every group measured, every English line under its box's budget, no undetected self-wrapping box. A fix for one column (a special case, a per-column limit) means re-running it over every group, not closing the bug at that column.
 - **Blind spot:** the checks above skip entries marked data. A script with odd-sized opcode arguments flips its text to odd offsets, dumps as garbage, and gets marked data: one game shipped its level-up talk in Japanese this way. `jp_left.py` over the whole text regions (both byte phases), with an honest known list (§Leftover Japanese), catches it.
 - **Stub last lines:** fail a multi-line paragraph whose last line is under ~6 characters (one orphaned syllable or word). It is mechanical, so the lint catches it and no reviewer has to.
 - **Tests build their own ROM.** Build into a temp path inside the test (a module-scope fixture per language) instead of reading `build/*.sfc`: a stale artifact passes while the source is broken, and a missing one makes the test skip silently.
@@ -214,7 +222,7 @@ When an older fan patch exists and the user wants to build on it:
   - known issues, credits (respect prior patch authors), AI-assistance disclosure;
   - "unofficial, no pre-patched ROMs".
 - Zip = patch(es) + README/PATCHING.txt only, with no .cue. Name it `Game_EN_vX.Y.bps`. Use ZIP_STORED for xdelta.
-- **`tools/release.py`** runs, stopping at the first failure: build → tests → smoke → `jp_left.py` → `qa_gate.py check` on every `work/qa/**/manifest.tsv` (visual tour and story pass) → `textcover.py` (`emulator-qa.md` §Text coverage) → no unticked line in `docs/polish.md` → no template placeholder in the repo `README.md` → debug tool off in this build → patch → re-apply to a clean original and compare → zip. It handles `--help` without building, and refuses to overwrite an existing version's files without `--force` (a `--help` call once overwrote a released patch). Keep the playable patched image in `build/` (the user tests from it); the zip holds only the patch.
+- **`tools/release.py`** runs, stopping at the first failure: build → tests → smoke → `jp_left.py` → `qa_gate.py check` on every `work/qa/**/manifest.tsv` (visual tour and story pass) → `textcover.py` (`emulator-qa.md` §Text coverage) → `boxes.py` (§Width gate) → no unticked line in `docs/polish.md` → no template placeholder in the repo `README.md` → debug tool off in this build → patch → re-apply to a clean original and compare → zip. It handles `--help` without building, and refuses to overwrite an existing version's files without `--force` (a `--help` call once overwrote a released patch). Keep the playable patched image in `build/` (the user tests from it); the zip holds only the patch.
 - Release dirs stay local and gitignored. Publishing is the user's call.
 - Retire a superseded QA round explicitly by renaming its `manifest.tsv` to `manifest.tsv.retired`; both the release loop and guard scan every exact `manifest.tsv` under `work/qa/`, including archive folders.
 
