@@ -52,7 +52,8 @@ These are what earlier users settled on. Offer them as defaults instead of guess
   - the romanization source for names (official, earlier patch, Hepburn);
   - whether specs and plans need approval or are pre-approved (pre-approved means keep going through checkpoints, reporting at the end);
   - text drawn as graphics (titles, menus, banners) is in scope by default; ask which, if any, to leave Japanese;
-  - saves, memory cards or savestates the user already has: a head start while the debug tool (phase 2) is being built, not a substitute for it.
+  - saves, memory cards or savestates the user already has: a head start while the debug tool (phase 2) is being built, not a substitute for it;
+  - the review agent (`agent[:model[:effort]]`, agent one of claude, codex, opencode) that runs independent reviews when there are no subagents (`references/translation.md` §Review). Default: the agent and model running this setup, e.g. `claude:claude-opus-5-5:high`. Record it in `docs/decisions.md`; a harness that names one in its prompt wins.
 
 ## Step 0: Set up the repo (once; skip if AGENTS.md or CLAUDE.md already lists build/check/smoke commands)
 
@@ -103,6 +104,7 @@ When the user reports an in-game bug, reproduce it with `emu.py` first, from the
 | `rectcover.py ORIG.png x,y,w,h.. [--pad 4] [--diff 0]` | Original text running past a clear rect (a dakuten or tail left as stray pixels); exit 1 if any rect must grow (`references/graphics.md` §Lettering) |
 | `textcover.py LOGDIR STRINGS.tsv [--waive F] [--mask M] [--runs-for IDS]` | Strings a warp or tour run never reached; exit 1 if any isn't waived. `--runs-for`: which runs showed these ids, to re-run only them (`references/emulator-qa.md` §Text coverage) |
 | `qa_gate.py init\|todo\|check\|waive MANIFEST ...` | Visual-QA gate: manifest of tour sheets with hashes, chunk files for reviewer subagents (`assets/visual-qa-brief.md`), exit 1 while any sheet lacks a verdict newer than its last change, or the build differs from the one the tour ran on (`references/emulator-qa.md` §Visual QA). The Claude Code guard blocks `gh release create` while it fails |
+| `review_agent.py SPEC --out F [--image PNG..] < prompt` | One read-only review by the review agent (claude, codex or opencode, any model) when there are no subagents (`references/translation.md` §Review) |
 | `jp_left.py BUILT --sjis\|--tbl jp.tbl [--slots F] [--known F] [--gba-ptrs] [--orig ORIG]` | Japanese runs still in the build; exit 1 if any. `--slots`/`--gba-ptrs` keep only text a pointer still reaches |
 | `relsearch.py`, `dis65816.py`, `disasm.py` (capstone), `ramsearch.py` | Recon: relative search, SNES / ARM / MIPS disassembly + xref, cheat-style RAM search |
 | `tiles.py render\|import\|map`, `vramfind.py` | Graphics text: render tiles and BG maps from dumps, re-import edited PNGs, find VRAM tiles in the ROM (`references/graphics.md`) |

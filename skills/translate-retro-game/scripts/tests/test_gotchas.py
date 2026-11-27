@@ -19,6 +19,7 @@ import fetch_emu
 import gim
 import psp
 import qa_gate
+import review_agent
 import romdiff
 
 spec = importlib.util.spec_from_file_location("batches", SCRIPTS.parent / "assets/batches.py")
@@ -155,6 +156,23 @@ class Gotchas(unittest.TestCase):
             self.assertFalse(any(p.startswith("help") for p in bad), bad)
             boxes[1][3] = "missing.png"
             self.assertTrue(any(p.startswith("help: no shot") for p in boxes_mod.problems(text, boxes, d)))
+
+    def test_review_agent_specs_stay_read_only(self):
+        out = Path("v.md")
+        claude = review_agent.command("claude:claude-opus-5-5:high", out, [])
+        self.assertEqual(claude[-4:], ["--model", "claude-opus-5-5", "--effort", "high"])
+        self.assertIn("dontAsk", claude)
+        codex = review_agent.command("codex", out, ["a.png"])
+        self.assertEqual(codex[2:4], ["-s", "read-only"])
+        self.assertEqual(codex[-3:], ["-i", "a.png", "-"])  # prompt on stdin
+        oc = review_agent.command("opencode:opencode-go/kimi-k3.1-pro", out, [])
+        self.assertEqual(oc[2:4], ["--agent", "plan"])
+        self.assertIn("opencode-go/kimi-k3.1-pro", oc)
+        with self.assertRaises(SystemExit):
+            review_agent.command("gemini", out, [])
+        events = ['{"type":"step_start"}', '{"type":"text","part":{"text":"reading"}}', '{"type":"step_start"}',
+                  '{"type":"text","part":{"text":"No findings."}}', 'not json']
+        self.assertEqual(review_agent.opencode_text("\n".join(events)), "No findings.")
 
     def test_driver_globals_cannot_be_overwritten(self):
         from types import SimpleNamespace
